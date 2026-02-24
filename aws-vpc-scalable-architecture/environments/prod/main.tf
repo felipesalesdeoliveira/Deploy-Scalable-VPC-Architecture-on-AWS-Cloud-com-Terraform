@@ -213,7 +213,7 @@ module "bastion_host" {
   tags = local.common_tags
 }
 ###############################################################################
-# SECURITY GROUP - BASTION
+# SECURITY GROUP - BASTION & APP
 ###############################################################################
 
 module "bastion_sg" {
@@ -242,4 +242,89 @@ module "bastion_sg" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   ]
+}
+
+module "app_sg" {
+  source = "../../modules/security/security-groups"
+
+  name        = "app-sg"
+  description = "Security group for application instances"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_rules = [
+    {
+      description = "Allow HTTP from internet"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow HTTPS from internet"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow SSH from bastion"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      security_groups = [module.bastion_sg.security_group_id]
+    }
+  ]
+
+  egress_rules = [
+    {
+      description = "Allow all outbound"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
+}
+###############################################################################
+# lOAD BALANCER - NLB
+###############################################################################
+module "app_nlb" {
+  source = "../../modules/networking/nlb"
+
+  name       = "app-nlb"
+  vpc_id     = module.vpc_app.vpc_id
+  subnet_ids = module.app_public_subnets.subnet_ids
+  port       = 80
+}
+###############################################################################
+# LAUNCH TEMPLATE - APP
+###############################################################################
+module "app_launch_template" {
+  source = "../../modules/compute/launch-template"
+
+  name               = "app-template"
+  ami_id             = data.aws_ami.amazon_linux.id
+  instance_type      = "t3.micro"
+  security_group_ids = [module.app_sg.security_group_id]
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum install -y httpd
+              systemctl start httpd
+              echo "App funcionando" > /var/www/html/index.html
+              EOF
+}
+###############################################################################
+# AUTOSCALING GROUP - APP
+###############################################################################
+module "app_asg" {
+  source = "../../modules/compute/autoscaling"
+
+  name               = "app-asg"
+  min_size           = 2
+  max_size           = 2
+  desired_capacity   = 2
+  subnet_ids         = module.app_private_subnets.subnet_ids
+  launch_template_id = module.app_launch_template.launch_template_id
+  target_group_arns  = [module.app_nlb.target_group_arn]
 }
