@@ -1,3 +1,6 @@
+###############################################################################
+# VPC BASTION & APP
+###############################################################################
 module "vpc_bastion" {
   source = "../../modules/vpc"
 
@@ -21,6 +24,9 @@ module "vpc_app" {
     Project     = "scalable-vpc"
   }
 }
+###############################################################################
+# SUBNETS PUBLIC & PRIVATE
+###############################################################################
 module "bastion_public_subnets" {
   source = "../../modules/subnets"
 
@@ -58,6 +64,9 @@ module "app_private_subnets" {
 
   public = false
 }
+###############################################################################
+# INTERNET GATEWAY 
+###############################################################################
 module "bastion_igw" {
   source = "../../modules/internet-gateway"
 
@@ -70,6 +79,9 @@ module "app_igw" {
   name   = "app-igw"
   vpc_id = module.vpc_app.vpc_id
 }
+###############################################################################
+# ROUTE TABLES 
+###############################################################################
 module "bastion_public_rt" {
   source = "../../modules/route-tables"
 
@@ -100,16 +112,6 @@ module "app_public_rt" {
     }
   ]
 }
-module "app_nat" {
-  source = "../../modules/nat-gateway"
-
-  name      = "app-nat"
-  subnet_id = module.app_public_subnets.subnet_ids[0]
-
-  tags = {
-    Environment = "prod"
-  }
-}
 module "app_private_rt" {
   source = "../../modules/route-tables"
 
@@ -125,6 +127,22 @@ module "app_private_rt" {
     }
   ]
 }
+###############################################################################
+# NAT GATEWAY 
+###############################################################################
+module "app_nat" {
+  source = "../../modules/nat-gateway"
+
+  name      = "app-nat"
+  subnet_id = module.app_public_subnets.subnet_ids[0]
+
+  tags = {
+    Environment = "prod"
+  }
+}
+###############################################################################
+# TRANSIT GATEWAY 
+###############################################################################
 module "transit_gateway" {
   source = "../../modules/transit-gateway"
 
@@ -143,6 +161,9 @@ module "transit_gateway" {
     }
   ]
 }
+###############################################################################
+# BASTION HOST
+###############################################################################
 data "aws_ami" "amazon_linux" {
   most_recent = true
 
