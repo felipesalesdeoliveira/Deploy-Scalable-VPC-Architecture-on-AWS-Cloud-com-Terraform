@@ -1,4 +1,4 @@
 
 locals {
-  oooo
+  ooo fffo
 }
