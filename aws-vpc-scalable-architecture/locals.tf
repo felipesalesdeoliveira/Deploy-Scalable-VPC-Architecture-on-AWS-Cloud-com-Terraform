@@ -1,4 +1,0 @@
-
-locals {
-  ooo fff aaaao
-}
