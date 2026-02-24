@@ -1,5 +1,6 @@
 variable "role_name" {
-  type = string
+  description = "Nome da IAM Role"
+  type        = string
 }
 
 variable "assume_role_service" {
@@ -19,7 +20,14 @@ variable "inline_policy_json" {
   default     = null
 }
 
+variable "create_instance_profile" {
+  description = "Define se deve criar Instance Profile"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
-  type    = map(string)
-  default = {}
+  description = "Tags para a role"
+  type        = map(string)
+  default     = {}
 }
