@@ -197,14 +197,49 @@ data "aws_ami" "amazon_linux" {
 module "bastion_host" {
   source = "../../modules/compute/bastion"
 
-  name                = "bastion-host"
-  ami_id              = data.aws_ami.amazon_linux.id
-  instance_type       = "t3.micro"
-  subnet_id           = module.bastion_public_subnets.subnet_ids[0]
-  security_group_ids  = [module.bastion_sg.security_group_id]
-  key_name            = "sua-keypair"
-  associate_public_ip = false
+  name               = "bastion-host"
+  ami_id             = data.aws_ami.amazon_linux.id
+  instance_type      = "t3.micro"
+  subnet_id          = module.bastion_public_subnets.subnet_ids[0]
+  security_group_ids = [module.bastion_sg.security_group_id]
+
+  key_name        = "bastion-key"
+  create_key_pair = true
+  public_key_path = "~/.ssh/id_rsa.pub"
+
   allocate_eip        = true
+  associate_public_ip = false
 
   tags = local.common_tags
+}
+###############################################################################
+# SECURITY GROUP - BASTION
+###############################################################################
+
+module "bastion_sg" {
+  source = "../../modules/security/security-groups"
+
+  name        = "bastion-sg"
+  description = "Security group for Bastion Host"
+  vpc_id      = module.vpc_bastion.vpc_id
+
+  ingress_rules = [
+    {
+      description = "SSH from my IP"
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["179.160.221.189/32"]
+    }
+  ]
+
+  egress_rules = [
+    {
+      description = "Allow all outbound"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  ]
 }

@@ -31,3 +31,15 @@ resource "aws_eip_association" "elastic_ip_association" {
   instance_id   = aws_instance.bastion.id
   allocation_id = aws_eip.elastic_ip[0].id
 }
+resource "aws_key_pair" "bastion_key_pair" {
+  count      = var.create_key_pair ? 1 : 0
+  key_name   = var.key_name
+  public_key = file(pathexpand(var.public_key_path))
+
+  tags = merge(
+    {
+      Name = "${var.name}-key-pair"
+    },
+    var.tags
+  )
+}
