@@ -6,11 +6,6 @@ module "vpc_bastion" {
 
   name = "bastion-vpc"
   cidr = "192.168.0.0/16"
-
-  tags = {
-    Environment = "prod"
-    Project     = "scalable-vpc"
-  }
 }
 
 module "vpc_app" {
@@ -18,11 +13,6 @@ module "vpc_app" {
 
   name = "app-vpc"
   cidr = "172.32.0.0/16"
-
-  tags = {
-    Environment = "prod"
-    Project     = "scalable-vpc"
-  }
 }
 ###############################################################################
 # SUBNETS PUBLIC & PRIVATE
@@ -37,10 +27,6 @@ module "bastion_public_subnets" {
   azs   = ["us-east-1a"]
 
   public = true
-
-  tags = {
-    Environment = "prod"
-  }
 }
 module "app_public_subnets" {
   source = "../../modules/subnets"
@@ -135,10 +121,6 @@ module "app_nat" {
 
   name      = "app-nat"
   subnet_id = module.app_public_subnets.subnet_ids[0]
-
-  tags = {
-    Environment = "prod"
-  }
 }
 ###############################################################################
 # TRANSIT GATEWAY 
@@ -152,7 +134,7 @@ module "transit_gateway" {
     {
       name       = "bastion-attachment"
       vpc_id     = module.vpc_bastion.vpc_id
-      subnet_ids = module.bastion_private_subnets.subnet_ids
+      subnet_ids = module.bastion_public_subnets.subnet_ids
     },
     {
       name       = "app-attachment"

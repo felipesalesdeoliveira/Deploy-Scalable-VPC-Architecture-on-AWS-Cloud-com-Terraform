@@ -8,7 +8,7 @@ resource "aws_subnet" "subnet" {
 
   tags = merge(
     {
-      Name = "${var.name}-${count.index}"
+      Name = "${var.name}-${count.index + 1}"
     },
     var.tags
   )
